@@ -534,6 +534,72 @@ static int mvsw61xx_set_mirror_source_port(struct switch_dev *dev,
 	return 0;
 }
 
+static int mvsw61xx_set_cpu_ports_bonding(struct switch_dev *dev,
+		const struct switch_attr *attr, struct switch_val *val)
+{
+	struct mvsw61xx_state *state = get_state(dev);
+	u16 reg;
+	int i;
+	/* Returns if there is only one CPU port */
+	if (state->cpu_port1 < 0)
+		return -EINVAL;
+
+	/* Set Trunk Mask Table Register (0x07) */
+	for(i = 0; i < 8; i++)
+	{
+		/* Set update bit */
+		reg = MV_TRUNK_UPDATE;
+
+		/* Set MaskNum */
+		reg |= i << MV_TRUNK_ID_NUM_SHIFT;
+
+		/* Set HashTrunk bit */
+		reg |= MV_TRUNK_HASH;
+
+		/* Set TrunkMask */
+		if (i % 2 == 0)
+			reg |= (MV_TRUNK_MEMBER_MASK & ~(1 << state->cpu_port1));
+		else
+			reg |= (MV_TRUNK_MEMBER_MASK & ~(1 << state->cpu_port0));
+
+		/* Write register */
+		sw16(dev, MV_GLOBAL2REG(TRUNK_MASK), reg);
+	}
+
+	/* Set Trunk Members Table Register */
+
+	/* Set update bit, keep Trunk ID zero */
+	reg = MV_TRUNK_UPDATE;
+
+	/* Add two CPU ports */
+	reg |= 1 << state->cpu_port0;
+	reg |= 1 << state->cpu_port1;
+
+	/* Write register */
+	sw16(dev, MV_GLOBAL2REG(TRUNK_MEMBER), reg);
+
+	/* Set Port Control register */
+	reg = sr16(dev, MV_PORTREG(CONTROL1, state->cpu_port0));
+	reg |= MV_PORTCTRL1_TRUNK;
+	reg &= ~MV_PORTCTRL1_TRUNK_ID_MASK;
+	sw16(dev, MV_PORTREG(CONTROL1, state->cpu_port0), reg);
+
+	reg = sr16(dev, MV_PORTREG(CONTROL1, state->cpu_port1));
+	reg |= MV_PORTCTRL1_TRUNK;
+	reg &= ~MV_PORTCTRL1_TRUNK_ID_MASK;
+	sw16(dev, MV_PORTREG(CONTROL1, state->cpu_port1), reg);
+
+	/* Set Port Association Vector Register 
+	reg = sr16(dev, MV_PORTREG(ASSOC, state->cpu_port0));
+	reg |= 1 << state->cpu_port1;
+	sw16(dev, MV_PORTREG(ASSOC, state->cpu_port0), reg);
+
+	reg = sr16(dev, MV_PORTREG(ASSOC, state->cpu_port1));
+	reg |= 1 << state->cpu_port0;
+	sw16(dev, MV_PORTREG(ASSOC, state->cpu_port0), reg); */
+	return 0;
+}
+
 static int mvsw61xx_vtu_program(struct switch_dev *dev)
 {
 	struct mvsw61xx_state *state = get_state(dev);
@@ -846,6 +912,12 @@ static const struct switch_attr mvsw61xx_global[] = {
 		.description = "Enable 802.1q VLAN support",
 		.get = mvsw61xx_get_enable_vlan,
 		.set = mvsw61xx_set_enable_vlan,
+	},
+	{
+		.type = SWITCH_TYPE_INT,
+		.name = "enable_bonding",
+		.description = "Enable CPU ports bonding",
+		.set = mvsw61xx_set_cpu_ports_bonding,
 	},
 	{
 		.type = SWITCH_TYPE_INT,
