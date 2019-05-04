@@ -1,0 +1,39 @@
+From 6326fa0c408c266275f600d2a71eb974ab22be7e Mon Sep 17 00:00:00 2001
+From: David Woodhouse <dwmw2@infradead.org>
+Date: Sun, 28 Apr 2019 21:56:34 +0300
+Subject: [PATCH] Fix ENGINE support with OpenSSL 1.1+
+
+Commit 373c7969485 ("OpenSSL: Fix compile with OpenSSL 1.1.0 and
+deprecated APIs") removed a call to ENGINE_load_dynamic() for newer
+versions of OpenSSL, asserting that it should happen automatically.
+
+That appears not to be the case, and loading engines now fails because
+the dynamic engine isn't present.
+
+Fix it by calling ENGINE_load_builtin_engines(), which works for all
+versions of OpenSSL. Also remove the call to ERR_load_ENGINE_strings()
+because that should have happened when SSL_load_error_strings() is
+called anyway.
+
+Fixes: 373c79694859 ("OpenSSL: Fix compile with OpenSSL 1.1.0 and deprecated APIs")
+Signed-off-by: David Woodhouse <dwmw2@infradead.org>
+---
+ src/crypto/tls_openssl.c | 7 ++-----
+ 1 file changed, 2 insertions(+), 5 deletions(-)
+
+--- a/src/crypto/tls_openssl.c
++++ b/src/crypto/tls_openssl.c
+@@ -1071,11 +1071,8 @@ void * tls_init(const struct tls_config
+ 	}
+ 
+ #ifndef OPENSSL_NO_ENGINE
+-	wpa_printf(MSG_DEBUG, "ENGINE: Loading dynamic engine");
+-#if OPENSSL_VERSION_NUMBER < 0x10100000L
+-	ERR_load_ENGINE_strings();
+-	ENGINE_load_dynamic();
+-#endif /* OPENSSL_VERSION_NUMBER */
++	wpa_printf(MSG_DEBUG, "ENGINE: Loading builtin engines");
++	ENGINE_load_builtin_engines();
+ 
+ 	if (conf &&
+ 	    (conf->opensc_engine_path || conf->pkcs11_engine_path ||
