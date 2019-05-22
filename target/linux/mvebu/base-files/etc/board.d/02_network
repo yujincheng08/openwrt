@@ -27,9 +27,8 @@ linksys,mamba|\
 linksys,rango|\
 linksys,shelby|\
 linksys,venom)
-	ucidef_set_interfaces_lan_wan "eth0.1" "eth1.2"
-	ucidef_add_switch "switch0" \
-		"0:lan:4" "1:lan:3" "2:lan:2" "3:lan:1" "5@eth0" "4:wan" "6@eth1"
+	ucidef_set_interface_lan "lan4 lan3 lan2 lan1"
+	ucidef_set_interface_wan "wan"
 	;;
 marvell,a385-db-ap)
 	ucidef_set_interfaces_lan_wan "eth0 eth1" "eth2"

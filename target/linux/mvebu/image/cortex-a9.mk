@@ -11,7 +11,7 @@ ifeq ($(SUBTARGET),cortexa9)
 define Device/linksys
   $(Device/NAND-128K)
   DEVICE_TITLE := Linksys $(1)
-  DEVICE_PACKAGES := kmod-mwlwifi swconfig wpad-basic
+  DEVICE_PACKAGES := kmod-mwlwifi wpad-basic
   IMAGES += factory.img
   KERNEL_SIZE := 6144k
 endef
