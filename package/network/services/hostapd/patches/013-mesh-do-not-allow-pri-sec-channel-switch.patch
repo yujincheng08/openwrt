@@ -19,7 +19,7 @@ Signed-off-by: Peter Oh <peter.oh@bowerswilkins.com>
 
 --- a/wpa_supplicant/mesh.c
 +++ b/wpa_supplicant/mesh.c
-@@ -396,6 +396,7 @@ static int wpa_supplicant_mesh_init(stru
+@@ -397,6 +397,7 @@ static int wpa_supplicant_mesh_init(stru
  		return -1;
  	}
  
